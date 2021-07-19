@@ -19,8 +19,8 @@
 
 #include "std_msgs/Float32MultiArray.h"
 
-#include <myicub_ros/Marker.h>
-#include <myicub_ros/Markers.h>
+#include <lazy_mapping_moveit/Marker.h>
+#include <lazy_mapping_moveit/Markers.h>
 
 #include <XmlRpcValue.h>
 
@@ -96,7 +96,7 @@ class MoveitObstacles {
       delete a;
     }
 
-		void markers_callback(const myicub_ros::Markers::ConstPtr &msg) {
+		void markers_callback(const lazy_mapping_moveit::Markers::ConstPtr &msg) {
       
       for (int i = 0; i < msg->markers.size(); ++i) {
 
