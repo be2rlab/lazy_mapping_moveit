@@ -50,6 +50,7 @@ class MoveitObstacles {
 
   public:
     MoveitObstacles() : nh("~") {
+      std::cout << 3 << std::endl;
 
       // read obstacles parameters `[id, 3d_dimentions]`
       XmlRpc::XmlRpcValue obstacles_params_list;
@@ -81,14 +82,19 @@ class MoveitObstacles {
       //   }
       // }
 
+      std::cout << 4 << std::endl;
+
       // obstacle_adder = n.advertiseService("/add_obstacle", &MoveitObstacles::obstacle_adder_handler, this);
       markers_sub = nh.subscribe("/markers", 1, &MoveitObstacles::markers_callback, this);  // subscribe to the arcode_detector_node
 
       move_group_interface_ptr = new moveit::planning_interface::MoveGroupInterface(PLANNING_GROUP);
+      std::cout << 5 << std::endl;
+
       joint_model_group = move_group_interface_ptr->getCurrentState()->getJointModelGroup(PLANNING_GROUP);
 
       is_recived = false;   
       a = new double[10];
+      ROS_INFO("Obstacles2MoveIt run!");
     }
 
     ~MoveitObstacles() {
@@ -208,9 +214,12 @@ class MoveitObstacles {
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "moveit_obstacles_node");
+  std::cout << 1 << std::endl;
 
   ros::AsyncSpinner spinner(1);
   spinner.start();
+
+  std::cout << 2 << std::endl;
 
   MoveitObstacles moveit_obstacles;
   moveit_obstacles.spin();

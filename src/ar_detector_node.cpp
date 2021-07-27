@@ -3,14 +3,19 @@
 
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
+#include <sensor_msgs/JointState.h>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <std_msgs/Float32.h>
 
 #include <lazy_mapping_moveit/Marker.h>
 #include <lazy_mapping_moveit/Markers.h>
 
 #include <tf/transform_broadcaster.h>
+
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_ros/transform_listener.h>
 
 #include <visp_bridge/image.h>
 #include <visp/vpImageTools.h>
@@ -53,11 +58,25 @@ class MarkerDetectorNode {
 		unsigned int thickness = 2;
 		bool align_frame = false;
 
+		// // KDL stuff
+		// std::string urdf;
+		// std::string base_link;
+		// std::string tool_link;
+		
+		int N;
+		std::vector<double> q;
+		std::vector<double> dq;
+		ros::Subscriber js_state_sub;
+
+		tf2_ros::Buffer buffer_;
+		tf2_ros::TransformListener tf2_;
+		geometry_msgs::TransformStamped base_link_to_camera_optical_link; // My frames are named "base_link" and "leap_motion"
+
 public:
 
 		/* Empty constructor */
-		MarkerDetectorNode() : nh("~") {
-
+		MarkerDetectorNode() : nh("~"), tf2_(buffer_) {
+			N = 6;
 			isImageReceived = false;
 
 			/* Read parameters from ROS param-server */
@@ -101,11 +120,30 @@ public:
 			// markerPosePub = nh.advertise<geometry_msgs::Pose>("/marker_pose", 1, true); // in the drone frame
 			markersPub = nh.advertise<lazy_mapping_moveit::Markers>("/markers", 1, true);
 
+			// // KDL stuff
+			// js_state_sub = nh.subscribe("/joint_states", 1, &MarkerDetectorNode::js_state_callback, this);
+			// base_link = "base";
+			// tool_link = "tool0";
+			// for (int i = 0; i < N; ++i) { // WARN dim
+			// 	q.push_back(0);
+			// 	dq.push_back(0);
+			// }
+
+			
+
 			ROS_INFO("marker_detector_node started");
 		}
 
 		/* Destructor */
 		~MarkerDetectorNode() {}
+
+		/* robot state callback */
+		void js_state_callback(const sensor_msgs::JointState::ConstPtr &msg) {
+			for (int i = 0; i < N; i++) {	// WARN dim
+				q[i] = msg->position[i];
+				dq[i] = msg->velocity[i];
+			}
+		}
 
 		/* Receives an image from CoppeliaSim and convert it to VISP image type */
 		void image_callback(const sensor_msgs::Image::ConstPtr &msg) {
@@ -214,10 +252,35 @@ public:
 							int tag_id = atoi(message.substr(tag_id_pos + 4).c_str());
 
 							if (tag_id < sdc_N) {
+								
 								if (stability_detection_counts[tag_id] < 5) {
 									stability_detection_counts[tag_id]++;
 								} else {
 									stability_detection_counts[tag_id] = 0;
+
+									// KDL::JntArray q_kdl(N);
+									// for (int i = 0; i < N; ++i) {
+									// 	q_kdl(i) = q[i];
+									// 	// std::cout << q[i] << " ";
+									// }
+									// // std::cout << std::endl;
+
+									// KDL::Frame eeFrame;
+									// fksolver.JntToCart(q_kdl, eeFrame);
+
+									// double r, p, y;
+									// eeFrame.M.GetRPY(r, p, y);
+									// std::cout << eeFrame.p.data[0] << eeFrame.p.data[1] << eeFrame.p.data[2] << std::endl;
+
+
+									base_link_to_camera_optical_link = buffer_.lookupTransform("camera_color_optical_frame", "base_link", ros::Time(0), ros::Duration(1.0) );
+									
+									geometry_msgs::PoseStamped obstacle_pose_in_cam;
+									obstacle_pose_in_cam.header.frame_id = "camera_color_optical_frame";
+									obstacle_pose_in_cam.pose = pose_msg;
+									tf2::doTransform(obstacle_pose_in_cam, obstacle_pose_in_cam, base_link_to_camera_optical_link); // robot_pose is the PoseStamped I want to transform
+									pose_msg = obstacle_pose_in_cam.pose;
+
 									bool is_exist_marker = false;
 									// check if the marker exists with id == `tag_id`
 									int ii = 0;
@@ -252,14 +315,14 @@ public:
 						// Add camera frame
 						transform.setOrigin(tf::Vector3(camera_tr[0], camera_tr[1], camera_tr[2]));
 						tf::Quaternion qt_camera(camera_qt.x(), camera_qt.y(), camera_qt.z(), camera_qt.w());
-						transform.setRotation(qt_camera);
-						br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "root_link", "camera"));
+						transform.setRotation(qt_camera); 	
+						br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "base_link", "camera_color_optical_frame"));
 
 						// Add marker frame
 						transform.setOrigin(tf::Vector3(marker_tr[0], marker_tr[1], marker_tr[2]));
 						tf::Quaternion qt_marker(marker_qt.x(), marker_qt.y(), marker_qt.z(), marker_qt.w());
 						transform.setRotation(qt_marker);
-						br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "camera", "marker"));
+						br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "camera_color_optical_frame", "marker"));
 
 						/* Compute area of marker and get COG */
 						/* Publish features */
