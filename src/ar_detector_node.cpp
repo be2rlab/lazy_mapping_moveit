@@ -53,7 +53,7 @@ class MarkerDetectorNode {
 		vpHomogeneousMatrix dMc;  // transformation from drone frame to camera frame
 
 		// marker parameters
-		double tagSize = 0.24;
+		double tagSize = 0.12;
 		bool display_tag = true;
 		unsigned int thickness = 2;
 		bool align_frame = false;
@@ -90,17 +90,17 @@ public:
 			tagFamily = vpDetectorAprilTag::TAG_25h9; //TAG_36h11;  // !!!
 			poseEstimationMethod = vpDetectorAprilTag::HOMOGRAPHY_VIRTUAL_VS;
 
-			if (!camera_config_file.empty() && !camera_name.empty()) {
-				vpXmlParserCamera parser;
-				parser.parse(cam, camera_config_file, camera_name, vpCameraParameters::perspectiveProjWithoutDistortion);
-			} else {
-				std::cout << "Using hard coded parameters for your camera" << std::endl;
-				double px = 640;
-				double py = 480;
-				double u0 = 320;
-				double v0 = 240;
-				cam.initPersProjWithoutDistortion(px, py, u0, v0);
-			}
+			// if (!camera_config_file.empty() && !camera_name.empty()) {
+			// 	vpXmlParserCamera parser;
+			// 	parser.parse(cam, camera_config_file, camera_name, vpCameraParameters::perspectiveProjWithoutDistortion);
+			// } else {
+			// 	std::cout << "Using hard coded parameters for your camera" << std::endl;
+			// 	double px = 640;
+			// 	double py = 480;
+			// 	double u0 = 320;
+			// 	double v0 = 240;
+			// 	cam.initPersProjWithoutDistortion(px, py, u0, v0);
+			// }
 
 			double px = 605.8006591796875;
 			double py = 606.1141967773438;
@@ -246,7 +246,7 @@ public:
 						// check the marker's id
 						std::string message = detector.getMessage(k);
 						std::size_t tag_id_pos = message.find("id: ");
-						ROS_WARN("%s", message.c_str());
+						// ROS_WARN("%s", message.c_str());
 
 						if (tag_id_pos != std::string::npos) {
 							int tag_id = atoi(message.substr(tag_id_pos + 4).c_str());
@@ -273,11 +273,14 @@ public:
 									// std::cout << eeFrame.p.data[0] << eeFrame.p.data[1] << eeFrame.p.data[2] << std::endl;
 
 
-									base_link_to_camera_optical_link = buffer_.lookupTransform("camera_color_optical_frame", "base_link", ros::Time(0), ros::Duration(1.0) );
+									base_link_to_camera_optical_link = buffer_.lookupTransform("base_link", "camera_color_optical_frame", ros::Time(0), ros::Duration(1.0) );
+									// base_link_to_camera_optical_link = buffer_.lookupTransform("base_link", "camera_depth_optical_frame", ros::Time(0), ros::Duration(1.0) );
 									
 									geometry_msgs::PoseStamped obstacle_pose_in_cam;
+
 									obstacle_pose_in_cam.header.frame_id = "camera_color_optical_frame";
 									obstacle_pose_in_cam.pose = pose_msg;
+
 									tf2::doTransform(obstacle_pose_in_cam, obstacle_pose_in_cam, base_link_to_camera_optical_link); // robot_pose is the PoseStamped I want to transform
 									pose_msg = obstacle_pose_in_cam.pose;
 
@@ -309,20 +312,20 @@ public:
 						}
 
 						/* Add tf frames */
-						static tf::TransformBroadcaster br;
-						tf::Transform transform;
+						// static tf::TransformBroadcaster br;
+						// tf::Transform transform;
 
-						// Add camera frame
-						transform.setOrigin(tf::Vector3(camera_tr[0], camera_tr[1], camera_tr[2]));
-						tf::Quaternion qt_camera(camera_qt.x(), camera_qt.y(), camera_qt.z(), camera_qt.w());
-						transform.setRotation(qt_camera); 	
-						br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "base_link", "camera_color_optical_frame"));
+						// // Add camera frame
+						// transform.setOrigin(tf::Vector3(camera_tr[0], camera_tr[1], camera_tr[2]));
+						// tf::Quaternion qt_camera(camera_qt.x(), camera_qt.y(), camera_qt.z(), camera_qt.w());
+						// transform.setRotation(qt_camera); 	
+						// br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "base_link", "camera_color_optical_frame"));
 
-						// Add marker frame
-						transform.setOrigin(tf::Vector3(marker_tr[0], marker_tr[1], marker_tr[2]));
-						tf::Quaternion qt_marker(marker_qt.x(), marker_qt.y(), marker_qt.z(), marker_qt.w());
-						transform.setRotation(qt_marker);
-						br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "camera_color_optical_frame", "marker"));
+						// // Add marker frame
+						// transform.setOrigin(tf::Vector3(marker_tr[0], marker_tr[1], marker_tr[2]));
+						// tf::Quaternion qt_marker(marker_qt.x(), marker_qt.y(), marker_qt.z(), marker_qt.w());
+						// transform.setRotation(qt_marker);
+						// br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "camera_color_optical_frame", "marker"));
 
 						/* Compute area of marker and get COG */
 						/* Publish features */

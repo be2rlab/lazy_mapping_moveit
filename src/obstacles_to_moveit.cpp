@@ -83,18 +83,26 @@ class MoveitObstacles {
       // }
 
       std::cout << 4 << std::endl;
-
-      // obstacle_adder = n.advertiseService("/add_obstacle", &MoveitObstacles::obstacle_adder_handler, this);
-      markers_sub = nh.subscribe("/markers", 1, &MoveitObstacles::markers_callback, this);  // subscribe to the arcode_detector_node
-
+      
       move_group_interface_ptr = new moveit::planning_interface::MoveGroupInterface(PLANNING_GROUP);
+      
       std::cout << 5 << std::endl;
 
       joint_model_group = move_group_interface_ptr->getCurrentState()->getJointModelGroup(PLANNING_GROUP);
 
+      std::cout << 6 << std::endl;
+
+      // obstacle_adder = n.advertiseService("/add_obstacle", &MoveitObstacles::obstacle_adder_handler, this);
+      markers_sub = nh.subscribe("/markers", 1, &MoveitObstacles::markers_callback, this);  // subscribe to the arcode_detector_node
+      std::cout << 7 << std::endl;
+
+
       is_recived = false;   
       a = new double[10];
       ROS_INFO("Obstacles2MoveIt run!");
+
+      add_floor();
+
     }
 
     ~MoveitObstacles() {
@@ -148,6 +156,37 @@ class MoveitObstacles {
     // bool obstacle_adder_handler(std_msgs::Float32MultiArray::Request  &req, beginner_tutorials::AddTwoInts::Response &res) {
     //   return true;
     // }
+    void add_floor() {
+      shape_msgs::SolidPrimitive primitive;
+      primitive.type = primitive.BOX;
+      primitive.dimensions.resize(3);
+      primitive.dimensions[primitive.BOX_X] = 2;
+      primitive.dimensions[primitive.BOX_Y] = 2;
+      primitive.dimensions[primitive.BOX_Z] = 0.1;
+
+      // Define a pose for the box (specified relative to frame_id)
+      geometry_msgs::Pose box_pose;
+      box_pose.orientation.x = 0;
+      box_pose.orientation.y = 0;
+      box_pose.orientation.z = 1;
+      box_pose.orientation.w = 0;
+      box_pose.position.x = 0;
+      box_pose.position.y = 0;
+      box_pose.position.z = -0.05;  
+
+      moveit_msgs::CollisionObject collision_object;
+      collision_object.id = "floor";
+      collision_object.header.frame_id = move_group_interface_ptr->getPlanningFrame();
+
+      collision_object.primitives.push_back(primitive);
+      collision_object.primitive_poses.push_back(box_pose);
+      collision_object.operation = collision_object.ADD;
+
+      obstacles.push_back(collision_object);
+      ROS_INFO_NAMED("MoveitObstacles", "Add the floor");
+
+      planning_scene_interface.addCollisionObjects(obstacles);
+    }
 
     void add_obstacle(std::string obstacle_name) {
         //Препятствие
@@ -179,7 +218,7 @@ class MoveitObstacles {
           obstacles[i].primitives[0] = primitive;
           obstacles[i].primitive_poses[0] = box_pose;
 
-          ROS_INFO_NAMED("MoveitObstacles", "Update the object pose into the world");
+          // ROS_INFO_NAMED("MoveitObstacles", "Update the object pose into the world");
 
           is_obstacle_exist = true;
           break;
@@ -216,15 +255,16 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "moveit_obstacles_node");
   std::cout << 1 << std::endl;
 
-  ros::AsyncSpinner spinner(1);
+  ros::AsyncSpinner spinner(4);
   spinner.start();
 
   std::cout << 2 << std::endl;
 
   MoveitObstacles moveit_obstacles;
-  moveit_obstacles.spin();
+  // moveit_obstacles.spin();
+  ros::waitForShutdown();
 
   ros::shutdown();
-
+  
   return 0;
 }
