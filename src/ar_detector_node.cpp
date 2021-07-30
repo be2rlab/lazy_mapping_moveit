@@ -76,7 +76,7 @@ public:
 
 		/* Empty constructor */
 		MarkerDetectorNode() : nh("~"), tf2_(buffer_) {
-			N = 6;
+			N = 11;
 			isImageReceived = false;
 
 			/* Read parameters from ROS param-server */

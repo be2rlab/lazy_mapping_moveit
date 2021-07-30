@@ -101,7 +101,8 @@ class MoveitObstacles {
       a = new double[10];
       ROS_INFO("Obstacles2MoveIt run!");
 
-      add_floor();
+      // add_floor();
+      add_static_obs();
 
     }
 
@@ -109,6 +110,128 @@ class MoveitObstacles {
       delete move_group_interface_ptr;
       delete a;
     }
+
+
+    void add_static_obs() {
+
+      // FLOOR 1
+      shape_msgs::SolidPrimitive primitive;
+      primitive.type = primitive.BOX;
+      primitive.dimensions.resize(3);
+      primitive.dimensions[primitive.BOX_X] = 0.5;
+      primitive.dimensions[primitive.BOX_Y] = 1;
+      primitive.dimensions[primitive.BOX_Z] = 0.05;
+
+      // Define a pose for the box (specified relative to frame_id)
+      geometry_msgs::Pose box_pose;
+      box_pose.orientation.x = 0;
+      box_pose.orientation.y = 0;
+      box_pose.orientation.z = 0;
+      box_pose.orientation.w = 0;
+      box_pose.position.x = 0.45;
+      box_pose.position.y = 0.0;
+      box_pose.position.z = 0.07;  
+
+      moveit_msgs::CollisionObject collision_object;
+      collision_object.id = "floor1";
+      collision_object.header.frame_id = move_group_interface_ptr->getPlanningFrame();
+
+      collision_object.primitives.push_back(primitive);
+      collision_object.primitive_poses.push_back(box_pose);
+      collision_object.operation = collision_object.ADD;
+
+      obstacles.push_back(collision_object);
+      ROS_INFO_NAMED("MoveitObstacles", "Add an object into the world");
+
+      planning_scene_interface.addCollisionObjects(obstacles);
+
+      // FLOOR 2
+      primitive.type = primitive.BOX;
+      primitive.dimensions.resize(3);
+      primitive.dimensions[primitive.BOX_X] = 0.5;
+      primitive.dimensions[primitive.BOX_Y] = 1;
+      primitive.dimensions[primitive.BOX_Z] = 0.05;
+
+      // Define a pose for the box (specified relative to frame_id)
+      box_pose.orientation.x = 0;
+      box_pose.orientation.y = 0;
+      box_pose.orientation.z = 0;
+      box_pose.orientation.w = 0;
+      box_pose.position.x = -0.42;
+      box_pose.position.y = 0.0;
+      box_pose.position.z = 0.07;  
+
+      collision_object.id = "floor2";
+      collision_object.header.frame_id = move_group_interface_ptr->getPlanningFrame();
+
+      collision_object.primitives.push_back(primitive);
+      collision_object.primitive_poses.push_back(box_pose);
+      collision_object.operation = collision_object.ADD;
+
+      obstacles.push_back(collision_object);
+      ROS_INFO_NAMED("MoveitObstacles", "Add an object into the world");
+
+      planning_scene_interface.addCollisionObjects(obstacles);
+
+      // FLOOR 3
+      primitive.type = primitive.BOX;
+      primitive.dimensions.resize(3);
+      primitive.dimensions[primitive.BOX_X] = 1.0;
+      primitive.dimensions[primitive.BOX_Y] = 0.5;
+      primitive.dimensions[primitive.BOX_Z] = 0.05;
+
+      // Define a pose for the box (specified relative to frame_id)
+      box_pose.orientation.x = 0;
+      box_pose.orientation.y = 0;
+      box_pose.orientation.z = 0;
+      box_pose.orientation.w = 0;
+      box_pose.position.x = 0.0;
+      box_pose.position.y = 0.44;
+      box_pose.position.z = 0.07;  
+
+      collision_object.id = "floor3";
+      collision_object.header.frame_id = move_group_interface_ptr->getPlanningFrame();
+
+      collision_object.primitives.push_back(primitive);
+      collision_object.primitive_poses.push_back(box_pose);
+      collision_object.operation = collision_object.ADD;
+
+      obstacles.push_back(collision_object);
+      ROS_INFO_NAMED("MoveitObstacles", "Add an object into the world");
+
+      planning_scene_interface.addCollisionObjects(obstacles);
+
+      // FLOOR 4
+      primitive.type = primitive.BOX;
+      primitive.dimensions.resize(3);
+      primitive.dimensions[primitive.BOX_X] = 1.0;
+      primitive.dimensions[primitive.BOX_Y] = 0.5;
+      primitive.dimensions[primitive.BOX_Z] = 0.05;
+
+      // Define a pose for the box (specified relative to frame_id)
+      box_pose.orientation.x = 0;
+      box_pose.orientation.y = 0;
+      box_pose.orientation.z = 0;
+      box_pose.orientation.w = 0;
+      box_pose.position.x = 0.0;
+      box_pose.position.y = -0.46;
+      box_pose.position.z = 0.07;  
+
+      collision_object.id = "floor4";
+      collision_object.header.frame_id = move_group_interface_ptr->getPlanningFrame();
+
+      collision_object.primitives.push_back(primitive);
+      collision_object.primitive_poses.push_back(box_pose);
+      collision_object.operation = collision_object.ADD;
+
+      obstacles.push_back(collision_object);
+      ROS_INFO_NAMED("MoveitObstacles", "Add an object into the world");
+
+      planning_scene_interface.addCollisionObjects(obstacles);
+
+
+    }
+
 
 		void markers_callback(const lazy_mapping_moveit::Markers::ConstPtr &msg) {
       
